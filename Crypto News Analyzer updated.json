@@ -1,0 +1,3591 @@
+{
+  "name": "Crypto News Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://www.coindesk.com/arc/outboundfeeds/rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/rss+xml"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        -64
+      ],
+      "id": "0d25096d-e646-4d97-bbe0-468bf531a52d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "282b7744-9401-4c5c-8619-d80e7a8d7acb",
+              "name": "publisher",
+              "value": "Coindesk",
+              "type": "string"
+            },
+            {
+              "id": "366a25b9-d54a-4582-ab3e-455ee5448c73",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "43ac4c8c-f94b-4679-a02e-b09f6821cb48",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "949b33c2-50f8-47ba-9ac6-fbce05f95f9c",
+              "name": "timeAgo",
+              "value": "={{ $json.timeAgo }}",
+              "type": "string"
+            },
+            {
+              "id": "487cce22-7804-4550-8e84-a7818ff9c3f2",
+              "name": "Data",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -64
+      ],
+      "id": "f3acd96a-1b94-4591-bde5-3324042c1b3d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const xmlData = $input.first().json.data;\n\n// Function to extract text from a tag, handling CDATA sections\nfunction getTextContent(element, tagName) {\n  const regex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, 's');\n  const match = element.match(regex);\n  if (match && match[1]) {\n    // Check for CDATA section and extract content\n    const cdataMatch = match[1].match(/<!\\[CDATA\\[(.*?)\\]\\]>/s);\n    return cdataMatch ? cdataMatch[1].trim() : match[1].trim();\n  }\n  return '';\n}\n\n// Function to parse the XML string and extract relevant data\nfunction parseRssFeed(xml) {\n  const items = xml.match(/<item>.*?<\\/item>/gs);\n  if (!items) {\n    return [];\n  }\n\n  const output = [];\n  for (const item of items) {\n    const title = getTextContent(item, 'title');\n    const link = getTextContent(item, 'link');\n    const pubDate = getTextContent(item, 'pubDate');\n    // Extract the description from the content:encoded tag\n    const description = getTextContent(item, 'content:encoded');\n    \n    let timeAgo = '';\n    if (pubDate) {\n      // Calculate how long ago the article was published\n      const now = new Date();\n      const pubDateObj = new Date(pubDate);\n      const diffInMilliseconds = now - pubDateObj;\n      const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));\n      const diffInHours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));\n\n      if (diffInMinutes < 60) {\n        timeAgo = `${diffInMinutes} minutes ago`;\n      } else {\n        timeAgo = `${diffInHours} hours ago`;\n      }\n    }\n\n    // Only include items that have all the required fields\n    // The check for `timeAgo` also ensures a valid pubDate was found\n    if (title && link && pubDate && description && timeAgo) {\n      output.push({\n        title: title,\n        link: link,\n        timeAgo: timeAgo,\n        description: description\n      });\n    }\n  }\n  return output;\n}\n\n// Parse the data and prepare the output for n8n\nconst articles = parseRssFeed(xmlData);\n\n// Set the output for the n8n node\nreturn articles;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -64
+      ],
+      "id": "a9eeb45e-0489-40fa-a896-b6d90f455ce8",
+      "name": "Data clean"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "69f5db40-030a-4111-a2c5-d8b7ac2c8065",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "content": "## Coin Desk",
+        "height": 368,
+        "width": 2240,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1200,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "69889895-19e7-410a-b215-f083e9b334b2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Coin Telegraph",
+        "height": 496,
+        "width": 2240,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1200,
+        -720
+      ],
+      "typeVersion": 1,
+      "id": "21ea1aee-4576-4eff-8660-46cd911a347b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "url": "https://cointelegraph.com/rss",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/rss+xml"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        -560
+      ],
+      "id": "14058fab-2377-4f51-9080-c612ade1a066",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const xmlData = $input.first().json.data;\n\n// Function to extract text from a tag, handling CDATA sections\nfunction getTextContent(element, tagName) {\n  const regex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, 's');\n  const match = element.match(regex);\n  if (match && match[1]) {\n    // Check for CDATA section and extract content\n    const cdataMatch = match[1].match(/<!\\[CDATA\\[(.*?)\\]\\]>/s);\n    return cdataMatch ? cdataMatch[1].trim() : match[1].trim();\n  }\n  return '';\n}\n\n// Function to extract the first <p> snippet from raw HTML content\nfunction getSnippetFromHtml(html) {\n  const match = html.match(/<p>(.*?)<\\/p>/s);\n  return match ? match[1].trim() : '';\n}\n\n// Function to calculate how long ago the pubDate was\nfunction getTimeAgo(pubDateStr) {\n  const pubDate = new Date(pubDateStr);\n  const now = new Date();\n  const diffMs = now - pubDate;\n  const diffMins = Math.floor(diffMs / 60000);\n\n  if (diffMins < 1) return 'Just now';\n  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;\n\n  const diffHours = Math.floor(diffMins / 60);\n  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;\n\n  const diffDays = Math.floor(diffHours / 24);\n  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;\n}\n\n// Function to parse the XML string and extract relevant data\nfunction parseRssFeed(xml) {\n  const items = xml.match(/<item>.*?<\\/item>/gs);\n  if (!items) return [];\n\n  const output = [];\n\n  for (const item of items) {\n    const title = getTextContent(item, 'title');\n    const link = getTextContent(item, 'link');\n    const pubDate = getTextContent(item, 'pubDate');\n    const description = getTextContent(item, 'description') || getTextContent(item, 'content:encoded');\n    const snippet = getSnippetFromHtml(description);\n    const timeAgo = pubDate ? getTimeAgo(pubDate) : '';\n\n    if (title && link && pubDate) {\n      output.push({\n        title,\n        link,\n        timeAgo,\n        snippet\n      });\n    }\n  }\n\n  return output;\n}\n\n// Parse and return for n8n\nconst articles = parseRssFeed(xmlData);\nreturn articles;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -560
+      ],
+      "id": "b1e624c6-04c6-48ad-84cd-ae41b2ce9d2e",
+      "name": "Data clean1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6545243e-ea02-47f6-81f7-3f0e3d736b15",
+              "name": "publisher",
+              "value": "Coin telegraph",
+              "type": "string"
+            },
+            {
+              "id": "366a25b9-d54a-4582-ab3e-455ee5448c73",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "43ac4c8c-f94b-4679-a02e-b09f6821cb48",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "120ab5d1-558d-4c86-8afc-6b8dfcd93107",
+              "name": "Time ago",
+              "value": "={{ $json.timeAgo }}",
+              "type": "string"
+            },
+            {
+              "id": "810dd4f1-be4f-4573-8fb1-36b1f7472a4f",
+              "name": "Snippet",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        -560
+      ],
+      "id": "dab1aebb-834c-46cb-8f83-146a8dc0323e",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -560
+      ],
+      "id": "030d22cd-e004-4397-b9ce-9b6c6a27191e",
+      "name": "Limit1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1376,
+        -176
+      ],
+      "id": "436e6d68-4478-4a20-ab8b-1d68fffc2121",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -272,
+        -656
+      ],
+      "id": "4ed606dc-8e59-4cab-a77a-fa2976ce3575",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs",
+          "mode": "list",
+          "cachedResultName": "Latest Crypto news bank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $json.title }}",
+            "Link": "={{ $json.link }}",
+            "TimeAgo": "={{ $json.timeAgo }}",
+            "Descrption": "={{ $json.Data }}",
+            "Publisher": "={{ $json.News }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Publisher",
+              "displayName": "Publisher",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TimeAgo",
+              "displayName": "TimeAgo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Descrption",
+              "displayName": "Descrption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1760,
+        -352
+      ],
+      "id": "fcc69f3e-0d5c-4b6b-aa05-ddca94e59af1",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eyxuWAhwedAFKZeO",
+          "name": "jaaneabubakar34202@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"main_crypto\": \"Bitcoin\",\n  \"sentiment\": \"Positive\",\n  \"summary\": \"Bitcoin surged past $70,000 following increased institutional investment and renewed optimism in the market. Analysts attribute the rise to positive regulatory signals in the U.S. and growing adoption from major financial institutions.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2752,
+        256
+      ],
+      "id": "45b9f7ba-520f-4f23-b850-3934458d5386",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2064,
+        -176
+      ],
+      "id": "957775cb-5dc8-412e-84f5-1eb5f3ed5954",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs",
+          "mode": "list",
+          "cachedResultName": "Latest Crypto news bank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 981671374,
+          "mode": "list",
+          "cachedResultName": "Analyzed news ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit#gid=981671374"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $('Limit to 10').item.json.title }}",
+            "News Link": "={{ $('Limit to 10').item.json.link }}",
+            "Pub Time": "={{ $('Limit to 10').item.json.timeAgo }}",
+            "Main crypto": "={{ $json.output.main_crypto }}",
+            "Sentiment": "={{ $json.output.sentiment }}",
+            "Summary": "={{ $json.output.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pub Time",
+              "displayName": "Pub Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "News Link",
+              "displayName": "News Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Main crypto",
+              "displayName": "Main crypto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2944,
+        -304
+      ],
+      "id": "446f7a71-c813-47e4-9d9d-e1a1ec7644dd",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eyxuWAhwedAFKZeO",
+          "name": "jaaneabubakar34202@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "BTC agent stopped"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        256
+      ],
+      "id": "5e766cec-fef5-4980-9541-2a7f018929a8",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "url": "https://coinmarketcap.com/headlines/news",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 21
+            }
+          },
+          "response": {}
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1072,
+        448
+      ],
+      "id": "43ba35d4-5f6e-4f79-b2ec-4249650429f8",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const htmlData = $input.first().json.data;\n\n// Match each article block\nconst articleBlocks = htmlData.match(/<div class=\"uikit-row\">[\\s\\S]*?<\\/div><\\/div><\\/div>/g);\n\nif (!articleBlocks) {\n  return [];\n}\n\nconst results = [];\n\nfor (const block of articleBlocks) {\n  // Extract link\n  const linkMatch = block.match(/<a[^>]*href=\"([^\"]+)\"[^>]*class=\"[^\"]*cmc-link[^\"]*\">/);\n  const link = linkMatch ? linkMatch[1] : null;\n\n  // Extract title\n  const titleMatch = block.match(/class=\"[^\"]*cmc-link[^\"]*\">([^<]+)<\\/a>/);\n  const title = titleMatch ? titleMatch[1].trim() : null;\n\n  // Extract posted time like \"03:23\"\n  const timeMatch = block.match(/<p[^>]*class=\"[^\"]*fdCzQf[^\"]*\"[^>]*>([^<]+)<\\/p>/);\n  const postedTime = timeMatch ? timeMatch[1].trim() : null;\n\n  // Convert postedTime to \"x minutes/hours ago\"\n  let timeAgo = null;\n  if (postedTime) {\n    const now = new Date();\n    const [hours, minutes] = postedTime.split(':').map(Number);\n\n    const postDate = new Date();\n    postDate.setHours(hours);\n    postDate.setMinutes(minutes);\n    postDate.setSeconds(0);\n    postDate.setMilliseconds(0);\n\n    // If the post time is ahead of current time, assume it was posted yesterday\n    if (postDate > now) {\n      postDate.setDate(postDate.getDate() - 1);\n    }\n\n    const diffMs = now - postDate;\n    const diffMins = Math.floor(diffMs / 60000);\n    const diffHours = Math.floor(diffMins / 60);\n\n    if (diffMins < 1) {\n      timeAgo = \"Just now\";\n    } else if (diffMins < 60) {\n      timeAgo = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;\n    } else {\n      timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;\n    }\n  }\n\n  // Extract publisher (e.g., COINTURK NEWS)\n  const publisherMatch = block.match(/<span[^>]*class=\"[^\"]*ehyBa-d[^\"]*\"[^>]*>([^<]+)<\\/span>/);\n  const publisher = publisherMatch ? publisherMatch[1].trim() : null;\n\n  // Extract tags (multiple spans with class eydMEP)\n  const tagMatches = [...block.matchAll(/<span[^>]*class=\"[^\"]*eydMEP[^\"]*\"[^>]*>([^<]+)<\\/span>/g)];\n  const tags = tagMatches.map(match => match[1].trim());\n\n  if (title && link && timeAgo) {\n    results.push({\n      json: {\n        title,\n        link,\n        timeAgo,\n        publisher,\n        tags,\n      },\n    });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        448
+      ],
+      "id": "2a659f3c-fe93-4076-b391-2751a29be427",
+      "name": "Data clean2"
+    },
+    {
+      "parameters": {
+        "content": "## Coin Market Cap",
+        "height": 432,
+        "width": 2240,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1200,
+        272
+      ],
+      "typeVersion": 1,
+      "id": "ebd883cc-33cc-4b4e-9c2e-49f46e91014b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -5648,
+        96
+      ],
+      "id": "f855d2a1-6ebc-4cf2-aae3-96c79c3150b1",
+      "name": "WhatsApp Trigger",
+      "webhookId": "36611af4-b782-40e1-9c84-29155137adb0",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "omSQRVWX5tip9c0T",
+          "name": "Devnex Receiver"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "28b0066d-fda1-4c0e-9f09-28fac4b8fadd",
+                    "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].text.body }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "94a4b581-5d6e-42a3-8783-6fad51d2481a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3d56c630-3630-4073-82b7-b3a8f8b35124",
+                    "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].image }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -4704,
+        80
+      ],
+      "id": "6e0af777-fa4b-4649-853e-2bb0c0a182a9",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User message: {{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a Chat Classifier Agent in a crypto-focused assistant system. Your job is to analyze incoming user messages and determine which specialized agent should handle the request based on intent and content.\n\nYou must output a structured response in JSON format, indicating the selected agent and any useful metadata.\n\n⸻\n\n🎯 INTENT CATEGORIES & CORRESPONDING AGENTS\n\nYou must classify the user message into one of the following categories, and route it to the appropriate agent:\n\n⸻\n\n1. 🔍 scrape_news\n\nTrigger Examples:\n\t•\t“Scrape the latest crypto news”\n\t•\t“Fetch fresh news from CoinMarketCap”\n\t•\t“Update the news list”\n\nAction: Call the ScrapingAgent to fetch the latest crypto news from sources.\n\n⸻\n\n2. 📰 get_news\n\nTrigger Examples:\n\t•\t“Tell me top 5 crypto news”\n\t•\t“Summarize today’s headlines”\n\t•\t“What’s happening in the crypto world?”\n\t•\t“Any breaking Bitcoin news?”\n\nAction: Call the NewsExtractionAgent to filter, analyze, or summarize already scraped news data.\n\n⸻\n\n\n3. 💬 general_crypto_query\n\nTrigger Examples:\n\t•\t“What is Bitcoin?”\n\t•\t“Explain Ethereum merge”\n\t•\t“How does blockchain work?”\n\t•\t“Is crypto legal in Pakistan?”\n\nAction: Call the GeneralCryptoAgent to answer any fundamental or general question about cryptocurrencies or blockchain, or you dont understand any query.\n\nOUTPUT FORMAT (Always respond in this structure)\n\n{\n  \"agent\": \"AGENT_NAME\",  // One of: ScrapingAgent, NewsExtractionAgent, CryptoChartImageAnalyzerAgent, GeneralCryptoAgent\n  \"intent\": \"INTENT_NAME\", // One of: scrape_news, get_news, analyze_chart_image, general_crypto_query\n  \"reason\": \"Explanation of why this intent/agent was chosen based on user input\",\n  \"meta\": {\n    \"content_type\": \"text | image\",\n    \"input_text\": \"The user's original input (or 'image' if input was an image)\",\n    \"confidence\": \"High | Medium | Low\"\n  }\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -2928,
+        112
+      ],
+      "id": "99784f72-8e16-409c-be47-28aa5dba8df9",
+      "name": "Chat classifier"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"agent\": \"GeneralCryptoAgent\",\n  \"intent\": \"general_crypto_query\",\n  \"reason\": \"User asked a basic question about staking, which is a general crypto topic.\",\n  \"meta\": {\n    \"content_type\": \"text\",\n    \"input_text\": \"How does staking work?\",\n    \"confidence\": \"High\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -2704,
+        336
+      ],
+      "id": "0b523919-9abc-4163-9d94-cb483862698b",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.agent }}",
+                    "rightValue": "ScrapingAgent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "7c15db42-560d-4eb3-a670-e151e38caa79"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Scraping Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d2b77419-138b-4e81-8b8a-52bd0cd2fdc5",
+                    "leftValue": "={{ $json.output.agent }}",
+                    "rightValue": "NewsExtractionAgent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "News Extraction Agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3ae92e25-450c-4a8d-b4f7-f3a4250917cf",
+                    "leftValue": "={{ $json.output.agent }}",
+                    "rightValue": "GeneralCryptoAgent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "General Crypto Agent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2320,
+        192
+      ],
+      "id": "da722821-6c73-4084-962a-8e24d31190f0",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "619433844590330",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        912
+      ],
+      "id": "eaa44726-e134-47ac-89fa-3935700af457",
+      "name": "Send message",
+      "webhookId": "08edfeee-5baa-459d-8f2b-fd3bb2ec7548",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "619433844590330",
+        "recipientPhoneNumber": "=+923344708531",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        4336,
+        -672
+      ],
+      "id": "6bb2cf5a-4877-4bcc-86f8-64bad226e2cf",
+      "name": "Send message1",
+      "webhookId": "ae5692b7-e527-43fc-a3dc-a70b2a21e244",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "# Get News (Summarized) Process\n### Example Messages => trigger when user ask \n\n“Tell me top 5 crypto news”\n“Summarize today’s headlines”\n“Any breaking Bitcoin news?”\n\n### Action:\nCalls the NewsExtractionAgent to access, filter, and summarize already-scraped news from the Google Sheets store.\n\n### Process:\nRetrieves latest summarized news from Google Sheets.\nLLM further analyzes context and user’s question to provide a relevant, concise answer.",
+        "height": 592,
+        "width": 1392,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1264,
+        816
+      ],
+      "typeVersion": 1,
+      "id": "b156e7b2-f771-4598-bd7a-7b58733cd418",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get metadata for one or more cryptocurrencies including logo, description and links.",
+        "url": "=https://pro-api.coinmarketcap.com/v1/cryptocurrency/info",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "symbol",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -480,
+        1872
+      ],
+      "id": "d6db1bc0-84b5-416c-90ea-70e07d08cdbf",
+      "name": "Crypto info",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JtjaJjOUBKyImcEq",
+          "name": "Coin Market cap"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Returns global crypto market metrics including market cap, 24h volume, BTC dominance, and total active cryptocurrencies.",
+        "url": "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        1872
+      ],
+      "id": "46075fc8-18de-4eb7-a651-f080b7a71168",
+      "name": "Global Metric",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JtjaJjOUBKyImcEq",
+          "name": "Coin Market cap"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Convert cryptocurrency or fiat value from one currency to another.",
+        "url": "=https://pro-api.coinmarketcap.com/v1/tools/price-conversion",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "amount",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "symbol",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "convert",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        1872
+      ],
+      "id": "66c09f93-eeae-46f4-9722-2ab02f100146",
+      "name": "Price Conversion",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JtjaJjOUBKyImcEq",
+          "name": "Coin Market cap"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Retrieve a ranked list of cryptocurrencies sorted by market cap. Supports pagination and conversion currency.",
+        "url": "=https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "start",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "convert",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        1856
+      ],
+      "id": "95cc1399-ba0f-440c-810b-0664f1976eab",
+      "name": "Crypto Listing",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JtjaJjOUBKyImcEq",
+          "name": "Coin Market cap"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "619433844590330",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1536
+      ],
+      "id": "4db65aba-46a9-4a6b-9ebb-f819144fe64c",
+      "name": "Send message2",
+      "webhookId": "d63e8593-5bf0-4aed-9961-fabd6c3f70bd",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# General Crypto Query Trigger\n### Example Messages:\n\n“What is Bitcoin?”\n“Explain Ethereum merge”\n\"How does blockchain work?”\n“Is crypto legal in Pakistan?”\n\n### Action:\nCalls the GeneralCryptoAgent for general crypto questions or if the user’s query doesn’t fit the other two intents.\n\n### Capabilities:\nLive CoinMarketCap API (X-CMC_PRO_API_KEY) integration.\n\n### Toolset includes:\nCrypto Info: Key stats for any coin (volume, 24h change, rank, etc.)\nCrypto Listings: List of coins by market cap.\nCoinMarketCap Price: Live price for any crypto.\nGlobal Metrics: Market cap, BTC dominance, etc.\nPrice Conversion: Crypto ↔ Fiat and other conversions.\nAnswers fundamental, regulatory, and general blockchain questions.\n",
+        "height": 672,
+        "width": 1360,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1280,
+        1424
+      ],
+      "typeVersion": 1,
+      "id": "48806520-1c84-403a-a482-5512ddec8a27",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -3552,
+        -48
+      ],
+      "id": "95ba0307-09f9-4b2c-b566-07419d9202ba",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "jaPp32xjl2S77AKX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Summarize news  \nSummarizes and structures news items.",
+        "height": 560,
+        "width": 848,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "3dec1cb4-d018-4e30-913e-433a3e6ba0e0",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Limiting\nJust for testing purpose so that we test it fast\n\n",
+        "height": 272,
+        "width": 304,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1664,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "2dced4a1-8fe8-4285-b79b-bca5ccc805d2",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Update Raw news \nUplaod all data to google sheet\n \n",
+        "height": 272,
+        "width": 304,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1664,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "1725c7ae-9cbe-42f7-8be7-9f06a8075cd6",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Models\n\n\n",
+        "height": 352,
+        "width": 640,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "6e906451-349d-42b8-987d-3428d1e27cd2",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Output formate\nStructure out into JSON format \n\n\n\n",
+        "height": 352,
+        "width": 304,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2640,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "d72fb1c7-d356-4366-ad30-3f159835c367",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Error handler\nWhenever this agent fails - calls out Main error handler who send me message\n\n\n\n",
+        "height": 352,
+        "width": 288,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2960,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "6dba0225-a512-4e09-80c0-0a7151f2b090",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].audio.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -3968,
+        -48
+      ],
+      "id": "d4b855c1-f902-40e4-90f5-26e939b262a8",
+      "name": "Get URL",
+      "webhookId": "fc047cc0-a3d8-45b6-967d-241d4e43a44a",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3760,
+        -48
+      ],
+      "id": "8a97e32a-eb6b-4ef8-b4a3-016d1ee60459",
+      "name": "Download Audio",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "9bW9pcNWGz5bgHls",
+          "name": "youtube scraper"
+        },
+        "httpHeaderAuth": {
+          "id": "9aWHrojaInKnqdp4",
+          "name": "Whatsapp Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].image.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -4160,
+        384
+      ],
+      "id": "780247cb-3316-490d-8c69-ef4ac457255b",
+      "name": "Get img URL",
+      "webhookId": "fc047cc0-a3d8-45b6-967d-241d4e43a44a",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3984,
+        384
+      ],
+      "id": "73bdf080-e39e-40e3-b742-e3814d0b7ece",
+      "name": "Download Image",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "9bW9pcNWGz5bgHls",
+          "name": "youtube scraper"
+        },
+        "httpHeaderAuth": {
+          "id": "9aWHrojaInKnqdp4",
+          "name": "Whatsapp Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "openai/gpt-4o",
+          "mode": "list",
+          "cachedResultName": "OPENAI/GPT-4O"
+        },
+        "text": "=You are a visual crypto analyst.\nI will provide you a screenshot of a trading dashboard (e.g., Binance).\nYour task is to analyze the image and return ONLY the key trading info and smart next steps, in a short and structured way.\n\n⸻\n\n🧠 Return output in this format:\n\n📊 Market Snapshot\n\t•\tCurrent Price: (If visible)\n\t•\t24h Change: (Percentage and value)\n\t•\t24h High / Low: (If visible)\n\t•\tChart Timeframe: (e.g., 1W, 1D, if shown)\n\t•\tTrend Direction: (Uptrend / Downtrend / Sideways)\n\t•\tKey Indicators: (Only if visible — e.g., MA(7), MA(25), etc.)\n\n✅ Next Step Suggestion\n\t•\t (Hold / Sell / Take Partial Profit)\n\t•\t (Buy now / Wait for dip / Wait for breakout)\n\t•\tResistance / Support Levels\n\t•\tSet Alerts at: (Mention if any critical levels visible)\n\t•\tAny risks or missing info to consider?\n\n⸻\n\nBe flexible — if any data is not available in the image, just ignore it silently. Focus only on what’s visible and important.",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -3696,
+        384
+      ],
+      "id": "5b462643-44f7-474e-a244-72153ea86e83",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "PmVosLOErzVY5rBI",
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "619433844590330",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.content }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -3424,
+        384
+      ],
+      "id": "7ec35532-a326-4b2a-8391-4443909484b2",
+      "name": "Send message3",
+      "webhookId": "e906e31d-c9d7-49bd-bb32-9e1247998f2e",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "lNFa7gBkR4DZ3Rzq",
+          "name": "Devnex 2 sedner"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Reply back\n\n",
+        "height": 272,
+        "width": 368,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        816
+      ],
+      "typeVersion": 1,
+      "id": "147d2738-8817-4479-8746-4d5bb2d44d18",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## Whatsapp audio process\n\nWhatsApp voice messages are transcribed using OpenAI voice models.\nTranscribed text is routed to the same classification workflow as regular text.\n",
+        "height": 320,
+        "width": 896
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4064,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "6f1fa4d1-70ec-4ca0-89f9-5a234c36eb8e",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "## Get whatsapp image URL\n",
+        "height": 336,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4240,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "5efa659c-0e3a-42fe-8c31-c6fd9b2c641d",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "## Analyze screenshot\nScreenshots (e.g., of trading charts) are analyzed by the CryptoChartImageAnalyzerAgent.\nReturns a detailed market snapshot and actionable trading suggestions",
+        "height": 336,
+        "width": 576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3792,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "7a60da79-a5b1-4bc8-9b84-512e8ab2fd85",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "## Send message\n⚠️ Hard coded Number\n\n",
+        "height": 336,
+        "width": 272,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4256,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "64cf855c-7085-4efb-a6b9-f91db2da4502",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "content": "## Save summarize \nSave into google sheet ",
+        "height": 544,
+        "width": 288,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2848,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "eacfac16-687c-4025-a8d9-b8197f2eebc0",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "content": "## User query classifier (Langchain)\nAll user input is run through a Chat Classifier Agent which outputs the following structure:\n\n  \"agent\": \"AGENT_NAME\", \n  \"intent\": \"INTENT_NAME\", \n  \"reason\": \"Why this agent/intent was chosen\",\n  \"meta\": {\n    \"content_type\": \"text | image\",\n    \"input_text\": \"User's original input\",\n    \"confidence\": \"High | Medium | Low\"\n\n\n",
+        "height": 704,
+        "width": 656,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3120,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "3d6f3d0e-fe69-42e3-aa7b-ab43fd01bd73",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "content": "## Routing switch\n\n\n",
+        "height": 288,
+        "width": 352,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2448,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "c8c263f0-a7cc-4223-b1db-a4eb41b1f054",
+      "name": "Sticky Note18"
+    },
+    {
+      "parameters": {
+        "content": "\n\n# News Scraping Trigger\nExample Messages if you want to trigger from whatsapp chat:\n\n“Scrape the latest crypto news”\n“Fetch fresh news from CoinMarketCap”\n“Update the news list”\n\n## Action:\nCalls the ScrapingAgent to fetch and process the latest news from three major crypto news sources.\n\n## Websites Scraped:\n\n### CoinTelegraph ( [RSS Feed](https://cointelegraph.com/rss) ) – Select top 5 news items, extract details.\n\n### CoinDesk ( [RSS Feed](https://www.coindesk.com/arc/outboundfeeds/rss)  ) – Select top 5 news items.\n\n### CoinMarketCap News ( [RSS Feed](https://coinmarketcap.com/headlines/news ) Headlines) – Filter by trending coins, select top 5.\n",
+        "height": 2032,
+        "width": 2336,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1264,
+        -1264
+      ],
+      "typeVersion": 1,
+      "id": "89f0a946-1325-428c-9b3e-f2729ac060eb",
+      "name": "Sticky Note19"
+    },
+    {
+      "parameters": {
+        "content": "## Scrape individuals\n",
+        "height": 320,
+        "width": 1072,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -592
+      ],
+      "typeVersion": 1,
+      "id": "ed88dcb9-89fc-400c-b34d-30fe3630613f",
+      "name": "Sticky Note20"
+    },
+    {
+      "parameters": {
+        "content": "## Scrape individual posts\n\n",
+        "height": 240,
+        "width": 880,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "f791dcca-2bce-4abf-b76d-cb92a8e57a27",
+      "name": "Sticky Note21"
+    },
+    {
+      "parameters": {
+        "content": "## Only Relevant \n\n",
+        "height": 384,
+        "width": 272,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -672,
+        304
+      ],
+      "typeVersion": 1,
+      "id": "d35d3f49-76b1-4c33-bb61-04f0bee9bd60",
+      "name": "Sticky Note22"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        -704
+      ],
+      "id": "3399e2ca-3dfa-4a87-be29-467a165eba0f",
+      "name": "Limit5"
+    },
+    {
+      "parameters": {
+        "content": "# Latest 5 news update\n",
+        "height": 336,
+        "width": 1408,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2544,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "d32490ec-da83-4b3b-b733-be8946ee0bda",
+      "name": "Sticky Note23"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3456,
+        -688
+      ],
+      "id": "aebcd7da-c408-443b-b46a-00c539f1e43d",
+      "name": "4.1 mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "PmVosLOErzVY5rBI",
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=News data : {{JSON.stringify($json.data)}}",
+        "options": {
+          "systemMessage": "=You are a smart and concise assistant connected to a crypto news analyzer system. The system provides you with structured news data, including the following fields:\n\t•\tTitle of the news\n\t•\tMain Crypto(s) involved (e.g., BTC, ETH)\n\t•\tSentiment (Positive, Negative, or Neutral)\n\t•\tSummary of the news\n\n⸻\n\n🎯 Your Task\n\nOnly provide short news summaries about famous coins (e.g., BTC, ETH, XRP, SOL, BNB, ADA). You must:\n\t1.\tFocus only on news that involves well-known cryptocurrencies.\n\t2.\tUse ONLY the given news data — no assumptions or added info.\n\t3.\tStart your response with: “Here is the latest update about the news:”\n\t4.\tFormat the news in a short and readable way, using the title + short summary. Mention sentiment if useful.\n\t5.\tEnd the message with “Thank you.”\n\t6.\tIf no news is found for famous coins, say:\n“No recent updates about the major coins. Thank you.”\n\n⸻\n\n📌 Response Guidelines\n\t•\tBe brief, clear, and helpful.\n\t•\tUse a friendly tone.\n\t•\tDo not include links or extra commentary.\n\t•\tNo follow-up questions or offers — just say “Thank you.”"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3616,
+        -704
+      ],
+      "id": "b45f407b-8e78-4572-85e3-3588806f269f",
+      "name": "Latest news analyzer"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "aafeba8f-372a-4a74-9062-75a79e943c58",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "ETH",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "963e8179-bb08-4731-8a83-965179d66ec2",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "BTC",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "1111fe93-592b-4c9f-8103-67d665dc6e77",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "XRP",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "440de33a-273f-4135-8e1d-4dcd4a98c9d3",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "SOL",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "5fde5800-055d-4712-8f49-39540f84640f",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "BNB",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "c1e1de9f-891a-4cd3-88a6-bfedd41389dc",
+              "leftValue": "={{ $json.tags }}",
+              "rightValue": "ADA",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -576,
+        448
+      ],
+      "id": "3a7f8ddd-5a82-4188-b77a-262e87dd8195",
+      "name": "Famous coins"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        448
+      ],
+      "id": "9bf66276-92be-4ecf-a75a-d5f4ba328328",
+      "name": "Limit only 5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        400
+      ],
+      "id": "09217dd4-56f5-47a6-b126-e707c47a2b4b",
+      "name": "Loop Over Item"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the input data from the n8n variable\nconst inputData = $input.first().json.data;\n\n// First, un-escape the string.\n// We replace the Unicode escape sequences with their actual characters.\nlet unescapedHtml = inputData\n  .replace(/\\\\u003c/g, '<') // Replace escaped '<' with '<'\n  .replace(/\\\\u003e/g, '>') // Replace escaped '>' with '>'\n  .replace(/\\\\n/g, '\\n')     // Replace escaped newlines\n  .replace(/\\\\\\\\/g, '\\\\');   // Replace double backslashes with a single one\n\n// Array to store the clean paragraph text\nconst paragraphs = [];\n\n// A regular expression to find all content within a <p> tag.\n// The 'gi' flags ensure it's a global, case-insensitive search.\nconst regex = /<p[^>]*>([\\s\\S]*?)<\\/p>/gi;\nlet match;\n\n// Loop through the HTML to find every paragraph.\nwhile ((match = regex.exec(unescapedHtml)) !== null) {\n  // `match[1]` contains the inner text of the paragraph tag.\n  let content = match[1];\n\n  // Clean up any remaining HTML tags (like <strong> or <a>) inside the paragraph.\n  let cleanedText = content.replace(/<[^>]+>/g, '').trim();\n\n  // Make sure we're not adding empty paragraphs.\n  if (cleanedText) {\n    paragraphs.push(cleanedText);\n  }\n}\n\n// Join the collected paragraphs with a double newline for clear spacing.\nconst finalParagraphs = paragraphs.join('\\n\\n');\n\n// Prepare the output for the n8n workflow.\nconst output = [{\n  json: {\n    paragraphContent: finalParagraphs\n  }\n}];\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        496
+      ],
+      "id": "778ec85e-1255-4802-9c62-bbdd900aa2ca",
+      "name": "Clean data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "028eccd0-92aa-43e2-83ad-9ca9b74886ac",
+              "name": "News",
+              "value": "={{ $('Limit only 5').item.json.publisher }} - Coin market cap",
+              "type": "string"
+            },
+            {
+              "id": "448bf4ec-08f2-4574-b6e7-672dc6abe394",
+              "name": "title",
+              "value": "={{ $('Limit only 5').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "bc695bb7-f9e6-4492-b29b-48915b281383",
+              "name": "link",
+              "value": "={{ $('Limit only 5').item.json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "f29b84e1-3f63-4aff-b281-aa960e4957e0",
+              "name": "timeAgo",
+              "value": "={{ $('Limit only 5').item.json.timeAgo }}",
+              "type": "string"
+            },
+            {
+              "id": "7ef23104-2cdf-43c9-a6c1-80d3e018eccb",
+              "name": "Data",
+              "value": "={{ $json.paragraphContent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        496
+      ],
+      "id": "e7b51d30-2f5e-49f8-95d4-8e44bbef8809",
+      "name": "Mapping data"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        496
+      ],
+      "id": "5e6021a7-a2b4-44da-8b1b-b3e2a3a454e9",
+      "name": "Wait for 3 sec",
+      "webhookId": "78e3c8fc-ddbf-478f-a2e9-21493a91f99d"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        496
+      ],
+      "id": "949214d1-d008-42fc-ac8e-1f99326aa535",
+      "name": "Coinmarketcap news page"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.link }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "utm_source",
+              "value": "rss_feed"
+            },
+            {
+              "name": "utm_medium",
+              "value": "rss"
+            },
+            {
+              "name": "utm_campaign",
+              "value": "rss_partner_inbound"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            },
+            {
+              "name": "Referer",
+              "value": "https://cointelegraph.com/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        -512
+      ],
+      "id": "1ab26c03-31a2-4b94-bc8f-9b522ecc926c",
+      "name": "Cointelegraph news page"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1952,
+        -480
+      ],
+      "id": "b7034c03-77e9-4652-8cdd-8fa2db3c5ede",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        -448
+      ],
+      "id": "617190c4-0d13-4086-a614-5edb241a0e1e",
+      "name": "Wait for 3 sec1",
+      "webhookId": "d09fe080-b00f-4cf1-ad1e-a70ac3ec4bbe"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "028eccd0-92aa-43e2-83ad-9ca9b74886ac",
+              "name": "News",
+              "value": "Cointelegraph",
+              "type": "string"
+            },
+            {
+              "id": "448bf4ec-08f2-4574-b6e7-672dc6abe394",
+              "name": "title",
+              "value": "={{ $('Data clean1').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "bc695bb7-f9e6-4492-b29b-48915b281383",
+              "name": "link",
+              "value": "={{ $('Data clean1').item.json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "f29b84e1-3f63-4aff-b281-aa960e4957e0",
+              "name": "timeAgo",
+              "value": "={{ $('Data clean1').item.json.timeAgo }}",
+              "type": "string"
+            },
+            {
+              "id": "7ef23104-2cdf-43c9-a6c1-80d3e018eccb",
+              "name": "Data",
+              "value": "=Snippet {{ $('Data clean1').item.json.snippet }}\n\nData {{ $json.Data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        -512
+      ],
+      "id": "509ffc68-632f-47ea-ab4f-0a5cc7fc9625",
+      "name": "Map data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load cheerio if available in n8n, otherwise use RegExp workaround.\n// This code assumes the input HTML is in the `data` field of the first item.\nconst html = $input.first().json.data;\n\n// Regex fallback (cheerio not available in n8n by default)\nfunction extractParagraphsFromPostContent(html) {\n  const divMatch = html.match(/<div[^>]*class=[\"']post-content relative[\"'][^>]*>([\\s\\S]*?)<\\/div>/);\n  if (!divMatch || divMatch.length < 2) return [];\n\n  const divContent = divMatch[1];\n  const paragraphRegex = /<p[^>]*>(.*?)<\\/p>/g;\n  const paragraphs = [];\n  let match;\n  while ((match = paragraphRegex.exec(divContent)) !== null) {\n    paragraphs.push(match[1].trim());\n  }\n  return paragraphs;\n}\n\n// Extract\nconst paragraphs = extractParagraphsFromPostContent(html);\n\n// Return as individual items\nreturn paragraphs.map(p => ({ json: { paragraph: p } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -512
+      ],
+      "id": "e7bf55d4-b241-4ec0-8291-da23b0a88a2a",
+      "name": "Clean data1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "paragraph",
+              "renameField": true,
+              "outputFieldName": "Data"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -512
+      ],
+      "id": "3bec0f2a-0770-49e7-abb3-918d06c7fe1f",
+      "name": "all in one"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        -320
+      ],
+      "id": "823bf363-e7eb-46ee-9fdb-95795ff70887",
+      "name": "Sum up - Just to trigger next"
+    },
+    {
+      "parameters": {
+        "amount": 4
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2976,
+        -80
+      ],
+      "id": "beaf6dd7-9c62-4e71-bd49-e4c92bc8c8d9",
+      "name": "wait for 4",
+      "webhookId": "a3ffc82d-89c0-4dff-b87a-3fbb64fb2cd9"
+    },
+    {
+      "parameters": {
+        "content": "## Send message\n⚠️ Hard coded Gmail\n\n",
+        "height": 336,
+        "width": 272,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3968,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "57eed018-67c3-4f50-91e0-19fb706bac65",
+      "name": "Sticky Note24"
+    },
+    {
+      "parameters": {
+        "content": "## Manually run\n\n\n",
+        "height": 368,
+        "width": 352,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2080,
+        -592
+      ],
+      "typeVersion": 1,
+      "id": "3672ddbb-4dd6-47ba-92b6-1b4c95c4d036",
+      "name": "Sticky Note25"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1968,
+        -816
+      ],
+      "id": "ce98bef1-1616-40e1-a2f6-d5b2c5851527",
+      "name": "Run after every 6 house",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## 6-Hour News Refresh\nEvery 6 hours, the agent scrapes, summarizes, and saves the latest news to Google Sheets. This ensures that all chat queries receive fresh, up-to-date insights even without manual triggering.\n\n\n",
+        "height": 368,
+        "width": 352,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2080,
+        -992
+      ],
+      "typeVersion": 1,
+      "id": "9754e7b0-ab6a-4f18-b09a-14b3b1718daf",
+      "name": "Sticky Note26"
+    },
+    {
+      "parameters": {
+        "content": "## Triggers for new extraction\n\n\n\n",
+        "height": 1088,
+        "width": 416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2112,
+        -1280
+      ],
+      "typeVersion": 1,
+      "id": "ef0253a5-ed85-44bc-8218-f8b9dcce47cf",
+      "name": "Sticky Note27"
+    },
+    {
+      "parameters": {
+        "content": "# Crypto Agent WhatsApp\n\n## Overview\n**The n8n Crypto Agent is an intelligent automation workflow that connects with WhatsApp, enabling users to interact with multiple crypto-focused agents via simple chat commands or media. The system supports web scraping, live news summarization, market data queries, image analysis, and more – all through natural chat interactions.** \n\n### The agent combines:\n\n1. Automated scraping of crypto news websites\n2. Summarization and storage of news data\n3. Live querying and general crypto information retrieval using CoinMarketCap API tools\n4. Support for text, voice, and image-based queries\n5. LLM (OpenAI GPT-4.1 Mini, Claude 3.5 Sonnet) for classification, summarization, and tool orchestration\n\n## Features\nWhatsApp Chatbot integration. Users send messages (text, voice, images)\n\nCrypto News Scrapes and summarizes latest news from CoinTelegraph, CoinDesk, and CoinMarketCap every 6 hours (and on demand).\n\nNews content is cleaned, structured as JSON, summarized via LLM, and stored in Google Sheets.\n\nUsers can ask for the latest news, summaries, or detailed explanations of crypto concepts.\n\nMarket Data Toolkit - Live price, listings, conversions, and global market metrics via CoinMarketCap API integration.\n\nWhatsapp images analyzed for market trends and suggestions.\n\nAll user input is classified by intent and routed to the appropriate agent using a classifier agent with structured parser.\n\n",
+        "height": 752,
+        "width": 944
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5872,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "31bc5523-ac6e-4620-baf8-e27285de7cc4",
+      "name": "Sticky Note28"
+    },
+    {
+      "parameters": {
+        "content": "## User Triggers (WhatsApp Chat)\nMonitors WhatsApp for three main categories of user queries, plus voice and image messages:\n\n",
+        "height": 320,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5808,
+        -16
+      ],
+      "typeVersion": 1,
+      "id": "2e1d4d71-e606-4ddc-9b18-ce515dad6274",
+      "name": "Sticky Note29"
+    },
+    {
+      "parameters": {
+        "content": "## Human like movement\nThis show user to same like human as typing on whatsapp\n",
+        "height": 320,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5280,
+        -16
+      ],
+      "typeVersion": 1,
+      "id": "5efcee70-9477-4142-b0f4-6242147b4487",
+      "name": "Sticky Note30"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/619433844590330/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"status\": \"read\",\n  \"message_id\": \" {{ $('WhatsApp Trigger').item.json.messages[0].id }}\",\n  \"typing_indicator\": {\n    \"type\": \"text\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -5120,
+        96
+      ],
+      "id": "794746af-1ca4-484c-a113-f5ae3d1420c6",
+      "name": "Typing ...",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9aWHrojaInKnqdp4",
+          "name": "Whatsapp Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Extract raw news data \n## (title, content, link, etc.) and merge all\n\nClean and process data (deduplication, filtering).\n\nFeed each news item to LLM for summarization (JSON output).\n\nSave both raw and summarized data to Google Sheets for persistent access and chat integration.",
+        "height": 560,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1184,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "b6389f24-e709-4222-a496-dbfabb87c16d",
+      "name": "Sticky Note31"
+    },
+    {
+      "parameters": {
+        "content": "# Example Chat Flows\n\n\n### Scrape News\nUser: “Fetch latest crypto news”\nAgent: Triggers news scraping, saves new data, replies with a summary.\n\n### Get News\nUser: “Summarize today’s news”\nAgent: Fetches from stored summaries and answers accordingly.\n\n### General Crypto Info\nUser: “What’s the price of Ethereum?”\nAgent: Calls CoinMarketCap tool, returns live price.\n\n### Chart Image Analysis\nUser: [Uploads trading screenshot]\nAgent: Analyzes chart, replies with formatted market snapshot and suggestion.",
+        "height": 480,
+        "width": 656
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3120,
+        -688
+      ],
+      "typeVersion": 1,
+      "id": "63c0be22-6469-432d-88d8-61f3535124cd",
+      "name": "Sticky Note32"
+    },
+    {
+      "parameters": {
+        "content": "# LLM Model Used with Cost\n\n### Main agents → 🧠 GPT-4.1 Mini\n### Summerization  → GPT-4o Mini\n### Tool handling → ⚙️ Claude 3.5 Sonnet\n\n### 🔧 GPT-4.1 Mini (OpenAI)\n\nUsed for the main agent flows like news scraping, summarizing, classifying queries, and responding to general text inputs.\n Input: $0.40 / 1M tokens\n Output: $1.60 / 1M tokens\n Context: 1M tokens\n✅ Ideal for: Low-cost, high-performance tasks (text analysis, logic, summaries)\n\n### 🔧 GPT-4o Mini (OpenAI) Best for repetitive run\n\nGPT-4o Mini to summarize large volumes of crypto news, handle general queries, and respond to price-related questions. It’s the most affordable model available on OpenAI, yet delivers fast, high-quality results.\nInput: $0.15 / 1M tokens\nOutput: $0.60 / 1M tokens\nContext: 1 million tokens\n✅ Best for: News summarization, classification, simple queries, and pricing-related responses\n\n\n### 🛠 Claude 3.5 Sonnet (Anthropic)\n\nUsed for tool calling, API interactions (like CoinMarketCap), image analysis, and transcribing voice messages.\n Input: $3.00 / 1M tokens\n Output: $15.00 / 1M tokens\n Context: ~200K tokens\n✅ Ideal for: Complex, high-context tasks and external tool execution",
+        "height": 800,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5808,
+        384
+      ],
+      "typeVersion": 1,
+      "id": "10a6f6c3-3160-4e7e-8e93-787b3a30d536",
+      "name": "Sticky Note33"
+    },
+    {
+      "parameters": {
+        "content": "#  Agents/Tools Used\n\n### Chat Classifier Agent: Classifies user intent.\n\n### ScrapingAgent: Fetches and processes live news.\n\n### NewsSummarizer Agent: Summarizes and structures news items.\n\n### NewsExtractionAgent: Retrieves and filters summarized news for user queries.\n\n### GeneralCryptoAgent: Handles general and market-related queries, connected to CoinMarketCap tools.\n\n### CryptoChartImageAnalyzerAgent: Analyzes trading chart screenshots.\n\n### Google Sheets: Stores raw and summarized news data.\n\n### OpenAI GPT-4.1 Mini: Used for agent logic and summarization (low-cost, high-throughput).\n\n### Claude 3.5 Sonnet: Used for robust tool-calling and certain high-context tasks.",
+        "height": 624,
+        "width": 896
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6864,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "2f05e1ee-f14a-46bf-9214-80718f8b39b4",
+      "name": "Sticky Note34"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Title: {{ $json.title }}\n\nDesciption: {{ $json.Data }}",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a highly specialized AI assistant, expert in analyzing news related to the top cryptocurrencies.\n\nYour task is to process raw news articles and extract key insights specifically for the following cryptocurrencies:\n\nBTC (Bitcoin), ETH (Ethereum), XRP (Ripple), BNB (Build and Build), SOL (Solana), ADA (Cardano), AVAX (Avalanche), DOT (Polkadot), MATIC (Polygon), DOGE (Dogecoin), LTC (Litecoin)\n\n---\n\n🧾 INPUT:\nYou will receive the full content of a crypto-related news article (plain text or HTML). Read and clean it as needed.\n\n---\n\n📤 OUTPUT: Return ONLY in the following structured JSON format:\n\n{\n  \"main_crypto\": \"<One of the 11 coins listed above, or 'None' if not mentioned or irrelevant>\",\n  \"sentiment\": \"<Positive | Negative | Neutral - based on the overall article tone toward that coin>\",\n  \"summary\": \"<A concise, actionable, one-paragraph summary (under 100 words), written as if for an investor who only cares about the 11 listed coins. Highlight anything significant: price movements, regulations, partnerships, risks, hacks, or market trends — only if it's actually relevant.>\"\n}\n\n---\n\n📝 GUIDELINES:\n\n1. **main_crypto**:\n   - Identify the *most relevant* coin among the 11 provided.\n   - If none of these are mentioned significantly, return `\"None\"`.\n\n2. **sentiment**:\n   - **Positive**: Bullish news, growth, regulatory clarity, strong partnerships, or tech breakthroughs.\n   - **Negative**: Hacks, lawsuits, price drops, regulatory crackdowns, security flaws.\n   - **Neutral**: Informational, mixed views, or inconclusive content.\n\n3. **summary**:\n   - Prioritize writing for someone who wants to **know quickly whether the news affects one of these coins**.\n   - Do NOT include fluff. Focus on what's useful (e.g., “ADA partners with a UAE-based payment provider,” or “SOL suffers a major DDoS incident”).\n   - Avoid summarizing unrelated content.\n\n---\n\n💡 Example 1:\n{\n  \"main_crypto\": \"SOL\",\n  \"sentiment\": \"Negative\",\n  \"summary\": \"Solana faced a significant outage lasting 5 hours due to a DDoS attack affecting validator coordination. This incident raises fresh concerns about Solana’s network stability, especially ahead of its upcoming DeFi ecosystem upgrade.\"\n}\n\n💡 Example 2:\n{\n  \"main_crypto\": \"None\",\n  \"sentiment\": \"Neutral\",\n  \"summary\": \"The article discusses general crypto market sentiment without mentioning any of the top 11 coins directly or with enough detail to warrant a focused update.\"\n}\n\n---\n\nStart analyzing now."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2320,
+        -144
+      ],
+      "id": "31a59ef5-fb4f-4a94-ac6b-e7f81b993b8a",
+      "name": "Summarize agent",
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Query : {{ $('WhatsApp Trigger').item.json.messages[0].text.body }}\n\nNews data : {{JSON.stringify($json.data)}}",
+        "options": {
+          "systemMessage": "=You are a friendly and intelligent assistant connected to a crypto news analyzer system. The system provides you with structured news data, including the following fields:\n\t•\tTitle of the news : \n\t•\tMain Crypto(s) involved (e.g., BTC, ETH)\n\t•\tSentiment (Positive, Negative, or Neutral)\n\t•\tSummary of the news\n\n⸻\n\n🎯 Your Job\n\nUnderstand the user’s query about crypto news and respond using the provided data. Your goal is to:\n\t1.\tUnderstand what the user is asking — whether they want top news, news about a specific crypto (e.g., BTC), positive/negative news, or a summary of today’s news.\n\t2.\tUse ONLY the available news data — do not make up or assume any information.\n\t3.\tCraft short, clear, and helpful responses, in a friendly and conversational tone.\n\n⸻\n\n📌 Response Guidelines\n\t•\tAlways greet or respond politely.\n\t•\tUse news title, summary, and mention sentiment if relevant.\n\t•\tIf the user asks for a specific coin (e.g., ETH), only respond with news related to it.\n\t•\tIf no relevant news is found, say:\n“I couldn’t find any recent news about [coin]. Want me to check for something else?”\n\t•\tIf user asks for top news, show the most relevant ones (limit to 5–7 if too many).\n\t•\tKeep sentences clear and professional, but not robotic.\n\ndo not ask at last about would you like to ask something more, just say thank you, {{ $('WhatsApp Trigger').item.json.contacts[0].profile.name }}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        976
+      ],
+      "id": "74f89179-63d2-47a3-b8cc-438c19e0cc0a",
+      "name": "News Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Query : {{ $json.output.meta.input_text }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are a crypto analysis assistant. Your task is to respond to user queries by retrieving real. time cryptocurrency data using the tools listed below. Based on keywords or questions from the user, automatically call the relevant tool and return the results in a professional format.\n\n**Tool Functions**\n**Crypto Map** - Provide a visual heatmap of current market activity.\nslect values based on user query or your own in this order (symbol,listing_status, start, limit )\n**Crypto Info** - Return key details for a specific coin (e-g-, volume, 24h change, and rank)\n**Crypto Listings** - List all active coins by market capitalization.\n**CoinMarketCap Price** - Fetch the live price of any cryptocurrency by symbol.\n**Global Metrics** - Report global metrics such as total market cap and BTC dominance.\n**Price Conversion** - Convert between fiat and cryptocurrency. also select by your own or with user query (amount, symbol, convert)\n\nHere is the current date/time: {{ $now.setZone('Asia/Karachi').toFormat('HH:mm:ss') }}\nAlways return your output in clear, concise language at a high school level of reading.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        1520
+      ],
+      "id": "39e0d3a6-421e-40cb-b52c-7919579efe3d",
+      "name": "General Crypto agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs",
+          "mode": "list",
+          "cachedResultName": "Latest Crypto news bank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 981671374,
+          "mode": "list",
+          "cachedResultName": "Analyzed news ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit#gid=981671374"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1104,
+        1216
+      ],
+      "id": "203ff3e4-30cb-46c9-8e5c-3aae6c2912f2",
+      "name": "Get analyzed news",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eyxuWAhwedAFKZeO",
+          "name": "jaaneabubakar34202@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        1216
+      ],
+      "id": "0827f6d2-60dd-465f-85e1-db7f6d4b614d",
+      "name": "Limit to 5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3974f314-1bd0-48b9-bb1c-f62d44ea7e8f",
+              "name": "Title",
+              "value": "={{ $json.Title }}",
+              "type": "string"
+            },
+            {
+              "id": "88e18c47-619f-4c9c-8300-834a034a9065",
+              "name": "Main crypto",
+              "value": "={{ $json['Main crypto'] }}",
+              "type": "string"
+            },
+            {
+              "id": "3991c486-3460-4204-a74e-49248d7cce87",
+              "name": "Sentiment",
+              "value": "={{ $json.Sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "30d6c45a-e23d-4119-b5e3-b8a0b05134bc",
+              "name": "Summary",
+              "value": "={{ $json.Summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -608,
+        1216
+      ],
+      "id": "b11ecddf-4eb4-4f4f-8cb7-eef6ae53f8f2",
+      "name": "Data preparing"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        1216
+      ],
+      "id": "d8762ce4-f160-4776-8f6e-e43686cb1f6d",
+      "name": "all in one1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        1200
+      ],
+      "id": "6639b9cf-e8ee-445f-9f40-b82eb308bb35",
+      "name": "GPT 4.1 mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "PmVosLOErzVY5rBI",
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        1888
+      ],
+      "id": "baad3313-4875-4621-9e1a-9d6f6a7c4a76",
+      "name": "Sonnet 3.5",
+      "credentials": {
+        "openRouterApi": {
+          "id": "pQdFdtdXUUUOkN29",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Crypto news assistant stoppet "
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        288,
+        1264
+      ],
+      "id": "cccf0695-ab66-405e-be8e-ee695d7a8947",
+      "name": "Stop and Error1"
+    },
+    {
+      "parameters": {
+        "errorMessage": "General crypto agent stopped"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1904
+      ],
+      "id": "3c99babc-142f-4e83-91f7-e1865aa2b987",
+      "name": "Stop and Error2"
+    },
+    {
+      "parameters": {
+        "content": "# Reply back\n\n",
+        "height": 336,
+        "width": 368,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        96,
+        1424
+      ],
+      "typeVersion": 1,
+      "id": "fb47307f-38d4-44b2-b4fe-431807304293",
+      "name": "Sticky Note35"
+    },
+    {
+      "parameters": {
+        "content": "## Error handler\nWhenever this agent fails - calls out Main error handler who send me message\n\n\n\n",
+        "height": 304,
+        "width": 368,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        1104
+      ],
+      "typeVersion": 1,
+      "id": "8ebc2f4f-dfe4-47c8-91d7-35f5c5aaa5ca",
+      "name": "Sticky Note36"
+    },
+    {
+      "parameters": {
+        "content": "## Error handler\nWhenever this agent fails - calls out Main error handler who send me message\n\n\n\n",
+        "height": 320,
+        "width": 368,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        96,
+        1776
+      ],
+      "typeVersion": 1,
+      "id": "a111d2fe-bce7-41cd-b812-2917df7956aa",
+      "name": "Sticky Note37"
+    },
+    {
+      "parameters": {
+        "sendTo": "jaaneabubakar1@gmail.com",
+        "subject": "Latest news about crypto",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4048,
+        -704
+      ],
+      "id": "787ea624-33f1-4e47-a8aa-9a81e94a037e",
+      "name": "Send a message",
+      "webhookId": "3ba5e7eb-d927-421d-8f33-3a0b6b81cfb0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jrgeS8LuvHS4J2DS",
+          "name": "(Gmail) jaaneabubakar1@gmail.com "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        272
+      ],
+      "id": "e88eda34-8eea-40d5-a20e-701afb59cdb7",
+      "name": "gpt-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "jaPp32xjl2S77AKX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "moonshotai/kimi-k2:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        272
+      ],
+      "id": "665b42fe-acc4-4dbd-bb24-be1171a7a39e",
+      "name": "kimi-k2:free",
+      "credentials": {
+        "openRouterApi": {
+          "id": "pQdFdtdXUUUOkN29",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ffdbe269-b7c1-481f-9fff-244641921045",
+              "name": "text",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].text.body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4448,
+        112
+      ],
+      "id": "e444482e-22cf-45c1-bb10-b5a098d2d006",
+      "name": "Text message"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c6b966e-7ba9-42e4-aafc-8def248e10b6",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3344,
+        -48
+      ],
+      "id": "d89541ed-1576-442b-9d01-abd0b312cc60",
+      "name": "Audio to text"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -2944,
+        336
+      ],
+      "id": "c32860f6-affc-498c-a070-2c5190253a72",
+      "name": "GPT 4.1 mini1",
+      "credentials": {
+        "openAiApi": {
+          "id": "PmVosLOErzVY5rBI",
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs",
+          "mode": "list",
+          "cachedResultName": "Latest Crypto news bank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 981671374,
+          "mode": "list",
+          "cachedResultName": "Analyzed news ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zcGG1gqBzYfbeGapVQptPahOMnnrpQKDwFONNPMREhs/edit#gid=981671374"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2672,
+        -704
+      ],
+      "id": "745413f1-242d-4e44-b6f2-db78fe19133b",
+      "name": "Get saved news",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eyxuWAhwedAFKZeO",
+          "name": "jaaneabubakar34202@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3974f314-1bd0-48b9-bb1c-f62d44ea7e8f",
+              "name": "Title",
+              "value": "={{ $json.Title }}",
+              "type": "string"
+            },
+            {
+              "id": "88e18c47-619f-4c9c-8300-834a034a9065",
+              "name": "Main crypto",
+              "value": "={{ $json['Main crypto'] }}",
+              "type": "string"
+            },
+            {
+              "id": "3991c486-3460-4204-a74e-49248d7cce87",
+              "name": "Sentiment",
+              "value": "={{ $json.Sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "30d6c45a-e23d-4119-b5e3-b8a0b05134bc",
+              "name": "Summary",
+              "value": "={{ $json.Summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3104,
+        -704
+      ],
+      "id": "ea667261-27c4-4b78-92d8-fe8627747283",
+      "name": "Prepare for LLM"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3296,
+        -704
+      ],
+      "id": "7f59e03b-0dbb-4b5c-aeac-e34593b44e67",
+      "name": "all in one2"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        -48
+      ],
+      "id": "4af1ce98-c36b-4d60-b877-6ff63468e9ac",
+      "name": "Limit to 10"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Data clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data clean": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Data clean1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data clean1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Limit to 10",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cointelegraph news page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Summarize agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Sum up - Just to trigger next",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarize agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "wait for 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Data clean2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data clean2": {
+      "main": [
+        [
+          {
+            "node": "Famous coins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Typing ...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get img URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Chat classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat classifier": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get analyzed news",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto info": {
+      "ai_tool": [
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Metric": {
+      "ai_tool": [
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price Conversion": {
+      "ai_tool": [
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto Listing": {
+      "ai_tool": [
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Audio to text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get URL": {
+      "main": [
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get img URL": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Send message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit5": {
+      "main": [
+        [
+          {
+            "node": "Prepare for LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Latest news analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Latest news analyzer": {
+      "main": [
+        [
+          {
+            "node": "Send message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Famous coins": {
+      "main": [
+        [
+          {
+            "node": "Limit only 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit only 5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Item": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ],
+        [
+          {
+            "node": "Coinmarketcap news page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean data": {
+      "main": [
+        [
+          {
+            "node": "Mapping data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapping data": {
+      "main": [
+        [
+          {
+            "node": "Wait for 3 sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for 3 sec": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coinmarketcap news page": {
+      "main": [
+        [
+          {
+            "node": "Clean data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cointelegraph news page": {
+      "main": [
+        [
+          {
+            "node": "Clean data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for 3 sec1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map data": {
+      "main": [
+        [
+          {
+            "node": "Wait for 3 sec1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean data1": {
+      "main": [
+        [
+          {
+            "node": "all in one",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "all in one": {
+      "main": [
+        [
+          {
+            "node": "Map data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sum up - Just to trigger next": {
+      "main": [
+        [
+          {
+            "node": "Get saved news",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait for 4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run after every 6 house": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typing ...": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Crypto agent": {
+      "main": [
+        [
+          {
+            "node": "Send message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get analyzed news": {
+      "main": [
+        [
+          {
+            "node": "Limit to 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 5": {
+      "main": [
+        [
+          {
+            "node": "Data preparing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data preparing": {
+      "main": [
+        [
+          {
+            "node": "all in one1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "all in one1": {
+      "main": [
+        [
+          {
+            "node": "News Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "News Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sonnet 3.5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "General Crypto agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "kimi-k2:free": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Text message": {
+      "main": [
+        [
+          {
+            "node": "Chat classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio to text": {
+      "main": [
+        [
+          {
+            "node": "Chat classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1 mini1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get saved news": {
+      "main": [
+        [
+          {
+            "node": "Limit5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for LLM": {
+      "main": [
+        [
+          {
+            "node": "all in one2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "all in one2": {
+      "main": [
+        [
+          {
+            "node": "Latest news analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 10": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "af59bd32-d1b8-447a-b6db-d814617434aa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "03babb10c5cc8125b75f47e5ade5061061ef2f796b98e648e885297c5198814b"
+  },
+  "id": "MPjqiCeUyCKQt4w0",
+  "tags": []
+}
